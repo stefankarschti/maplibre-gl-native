@@ -453,6 +453,7 @@ void RenderLineLayer::update(gfx::ShaderRegistry& shaders,
             builder->setDepthType((renderPass == RenderPass::Opaque) ? gfx::DepthMaskType::ReadWrite
                                                                      : gfx::DepthMaskType::ReadOnly);
             builder->setCullFaceMode(gfx::CullFaceMode::disabled());
+            builder->setNeedsStencil(true);
             builder->setVertexAttrName("a_pos_normal");
 
             // vertices
@@ -478,7 +479,8 @@ void RenderLineLayer::update(gfx::ShaderRegistry& shaders,
             // segments
             builder->setSegments(gfx::Triangles(),
                                  bucket.triangles.vector(),
-                                 reinterpret_cast<const std::vector<Segment<void>>&>(bucket.segments));
+                                 bucket.segments.data(),
+                                 bucket.segments.size());
 
             // finish
             builder->flush();
