@@ -19,33 +19,34 @@ struct ShaderSource<BuiltIn::LineShader, gfx::Backend::Type::OpenGL> {
 layout (location = 0) in vec2 a_pos_normal;
 layout (location = 1) in vec4 a_data;
 
-layout (std140) uniform LineDrawableUBO {
+layout (std140) uniform LineUBO {
     highp mat4 u_matrix;
     highp vec2 u_units_to_pixels;
     mediump float u_ratio;
     lowp float u_device_pixel_ratio;
 };
 
-layout (std140) uniform LineEvaluatedPropsUBO {
+layout (std140) uniform LinePropertiesUBO {
     highp vec4 u_color;
     lowp float u_blur;
     lowp float u_opacity;
     mediump float u_gapwidth;
     lowp float u_offset;
     mediump float u_width;
+
     highp float pad1;
-    highp float pad2;
-    highp float pad3;
+    highp vec2 pad2;
 };
 
-layout (std140) uniform LineInterpolatedPropsUBO {
+layout (std140) uniform LineInterpolationUBO {
     lowp float u_color_t;
     lowp float u_blur_t;
     lowp float u_opacity_t;
     lowp float u_gapwidth_t;
     lowp float u_offset_t;
     lowp float u_width_t;
-    highp vec2 pad4;
+
+    highp vec2 pad3;
 };
 
 out vec2 v_normal;
@@ -157,33 +158,34 @@ mediump float width = u_width;
     v_width2 = vec2(outset, inset);
 }
 )";
-    static constexpr const char* fragment = R"(layout (std140) uniform LineDrawableUBO {
+    static constexpr const char* fragment = R"(layout (std140) uniform LineUBO {
     highp mat4 u_matrix;
     highp vec2 u_units_to_pixels;
     mediump float u_ratio;
     lowp float u_device_pixel_ratio;
 };
 
-layout (std140) uniform LineEvaluatedPropsUBO {
+layout (std140) uniform LinePropertiesUBO {
     highp vec4 u_color;
     lowp float u_blur;
     lowp float u_opacity;
     mediump float u_gapwidth;
     lowp float u_offset;
     mediump float u_width;
+
     highp float pad1;
-    highp float pad2;
-    highp float pad3;
+    highp vec2 pad2;
 };
 
-layout (std140) uniform LineInterpolatedPropsUBO {
+layout (std140) uniform LineInterpolationUBO {
     lowp float u_color_t;
     lowp float u_blur_t;
     lowp float u_opacity_t;
     lowp float u_gapwidth_t;
     lowp float u_offset_t;
     lowp float u_width_t;
-    highp vec2 pad4;
+
+    highp vec2 pad3;
 };
 
 in vec2 v_width2;
