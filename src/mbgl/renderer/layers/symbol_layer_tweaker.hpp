@@ -12,7 +12,7 @@ namespace mbgl {
 class SymbolLayerTweaker : public LayerTweaker {
 public:
     SymbolLayerTweaker(Immutable<style::LayerProperties> properties)
-        : LayerTweaker(properties){};
+        : LayerTweaker(properties){}
 
 public:
     ~SymbolLayerTweaker() override = default;

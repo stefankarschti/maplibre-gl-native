@@ -379,7 +379,7 @@ void RenderSymbolLayer::evaluate(const PropertyEvaluationParameters& parameters)
 
 #if MLN_DRAWABLE_RENDERER
     if (layerGroup) {
-        layerGroup->setLayerTweaker(std::make_shared<SymbolLayerTweaker>(evaluatedProperties));
+        layerGroup->getLayerTweaker()->updateProperties(evaluatedProperties);
     }
 #endif // MLN_DRAWABLE_RENDERER
 }
@@ -1178,6 +1178,7 @@ void RenderSymbolLayer::update(gfx::ShaderRegistry& shaders,
     using RawVertexVec = std::vector<std::uint8_t>; // <int16_t, 4>
     struct TileInfo {
         RawVertexVec textVertices, iconVertices;
+        gfx::UniformBufferPtr textInterp, iconInterp;
         gfx::DrawableTweakerPtr textTweaker, iconTweaker;
     };
     std::unordered_map<UnwrappedTileID, TileInfo> tileCache;
@@ -1218,7 +1219,12 @@ void RenderSymbolLayer::update(gfx::ShaderRegistry& shaders,
                               evaluated.get<style::IconHaloWidth>().constantOr(1);
         const auto iconFill = evaluated.get<style::IconColor>().constantOr(Color::black()).a > 0.0f;
 
-        const auto interpolateUBO = buildInterpUBO(bucketPaintProperties, isText, currentZoom);
+        // Share interpolation UBOs across all the elements of the same type in each tile
+        auto& interpUBO = isText ? tileInfo.textInterp : tileInfo.iconInterp;
+        if (!interpUBO) {
+            const auto interpolateBuf = buildInterpUBO(bucketPaintProperties, isText, currentZoom);
+            interpUBO = context.createUniformBuffer(&interpolateBuf, sizeof(interpolateBuf));
+        }
 
         if (builder) {
             builder->clearTweakers();
@@ -1304,7 +1310,7 @@ void RenderSymbolLayer::update(gfx::ShaderRegistry& shaders,
 
                 auto& uniforms = drawable->mutableUniformBuffers();
                 uniforms.createOrUpdate(SymbolLayerTweaker::SymbolDrawableTilePropsUBOName, &tileUBO, context);
-                uniforms.createOrUpdate(SymbolLayerTweaker::SymbolDrawableInterpolateUBOName, &interpolateUBO, context);
+                uniforms.addOrReplace(SymbolLayerTweaker::SymbolDrawableInterpolateUBOName, interpUBO);
 
                 tileLayerGroup->addDrawable(passes, tileID, std::move(drawable));
                 ++stats.drawablesAdded;
