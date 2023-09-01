@@ -58,7 +58,7 @@ void FillLayerTweaker::execute(LayerGroupBase& layerGroup,
     const auto debugGroup = parameters.encoder->createDebugGroup(label.c_str());
 #endif
 
-    if (!propsBuffer) {
+    if (!propsBuffer || propertiesUpdated) {
         const FillDrawablePropsUBO paramsUBO = {
             /* .color = */ evaluated.get<FillColor>().constantOr(FillColor::defaultValue()),
             /* .outline_color = */ evaluated.get<FillOutlineColor>().constantOr(FillOutlineColor::defaultValue()),
@@ -66,7 +66,7 @@ void FillLayerTweaker::execute(LayerGroupBase& layerGroup,
             /* .padding = */ 0,
             0,
             0};
-        propsBuffer = context.createUniformBuffer(&paramsUBO, sizeof(paramsUBO));
+        context.emplaceOrUpdateUniformBuffer(propsBuffer, &paramsUBO);
     }
 
     layerGroup.visitDrawables([&](gfx::Drawable& drawable) {

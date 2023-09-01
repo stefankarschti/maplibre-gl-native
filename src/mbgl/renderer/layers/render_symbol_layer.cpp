@@ -378,7 +378,7 @@ void RenderSymbolLayer::evaluate(const PropertyEvaluationParameters& parameters)
     evaluatedProperties = std::move(properties);
 
 #if MLN_DRAWABLE_RENDERER
-    if (layerGroup) {
+    if (layerGroup && layerGroup->getLayerTweaker()) {
         layerGroup->getLayerTweaker()->updateProperties(evaluatedProperties);
     }
 #endif // MLN_DRAWABLE_RENDERER

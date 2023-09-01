@@ -6,6 +6,7 @@
 #include <mbgl/layout/pattern_layout.hpp>
 
 #include <memory>
+#include <unordered_map>
 
 namespace mbgl {
 
@@ -63,6 +64,12 @@ private:
     gfx::ShaderGroupPtr outlineShaderGroup;
     gfx::ShaderGroupPtr patternShaderGroup;
     gfx::ShaderGroupPtr outlinePatternShaderGroup;
+
+    struct TileUBOs {
+        gfx::UniformBufferPtr interpolate;
+        gfx::UniformBufferPtr tileProps;
+    };
+    std::unordered_map<OverscaledTileID, TileUBOs> tileUBOs;
 #endif
 };
 

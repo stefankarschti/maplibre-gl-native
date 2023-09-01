@@ -92,8 +92,8 @@ void RenderFillLayer::evaluate(const PropertyEvaluationParameters& parameters) {
     evaluatedProperties = std::move(properties);
 
 #if MLN_DRAWABLE_RENDERER
-    if (layerGroup) {
-        layerGroup->setLayerTweaker(std::make_shared<FillLayerTweaker>(evaluatedProperties));
+    if (layerGroup && layerGroup->getLayerTweaker()) {
+        layerGroup->getLayerTweaker()->updateProperties(evaluatedProperties);
     }
 #endif
 }
@@ -343,15 +343,14 @@ void RenderFillLayer::update(gfx::ShaderRegistry& shaders,
 
     const auto finish = [&](gfx::DrawableBuilder& builder,
                             const OverscaledTileID& tileID,
-                            const FillInterpolateUBO& interpUBO,
-                            const FillDrawableTilePropsUBO& tileUBO) {
+                            const TileUBOs& sharedUBOs) {
         builder.flush();
 
         for (auto& drawable : builder.clearDrawables()) {
             drawable->setTileID(tileID);
             auto& uniforms = drawable->mutableUniformBuffers();
-            uniforms.createOrUpdate(FillLayerTweaker::FillInterpolateUBOName, &interpUBO, context);
-            uniforms.createOrUpdate(FillLayerTweaker::FillTilePropsUBOName, &tileUBO, context);
+            uniforms.addOrReplace(FillLayerTweaker::FillTilePropsUBOName, sharedUBOs.tileProps);
+            uniforms.addOrReplace(FillLayerTweaker::FillInterpolateUBOName, sharedUBOs.interpolate);
             tileLayerGroup->addDrawable(renderPass, tileID, std::move(drawable));
             ++stats.drawablesAdded;
         }
@@ -398,6 +397,8 @@ void RenderFillLayer::update(gfx::ShaderRegistry& shaders,
         const auto patternPosB = tile.getPattern(fillPatternValue.to.id());
         binders.setPatternParameters(patternPosA, patternPosB, crossfade);
 
+        auto& sharedUBOs = tileUBOs[tileID];
+
         const auto zoom = static_cast<float>(state.getZoom());
         const FillInterpolateUBO interpolateUBO = {
             /* .color_t = */ std::get<0>(binders.get<FillColor>()->interpolationFactor(zoom)),
@@ -408,11 +409,13 @@ void RenderFillLayer::update(gfx::ShaderRegistry& shaders,
             /* .fade = */ crossfade.t,
             /* .padding = */ 0,
             0};
+        context.emplaceOrUpdateUniformBuffer(sharedUBOs.interpolate, &interpolateUBO);
 
-        const FillDrawableTilePropsUBO tileProps = {
+        const FillDrawableTilePropsUBO tilePropsUBO = {
             /* pattern_from = */ patternPosA ? util::cast<float>(patternPosA->tlbr()) : std::array<float, 4>{0},
             /* pattern_to = */ patternPosB ? util::cast<float>(patternPosB->tlbr()) : std::array<float, 4>{0},
         };
+        context.emplaceOrUpdateUniformBuffer(sharedUBOs.tileProps, &tilePropsUBO);
 
         // `Fill*Program` all use `style::FillPaintProperties`
         gfx::VertexAttributeArray vertexAttrs;
@@ -432,17 +435,13 @@ void RenderFillLayer::update(gfx::ShaderRegistry& shaders,
         // If we already have drawables for this tile, update them.
         auto updateExisting = [&](gfx::Drawable& drawable) {
             auto& uniforms = drawable.mutableUniformBuffers();
-            uniforms.createOrUpdate(FillLayerTweaker::FillInterpolateUBOName, &interpolateUBO, context);
-            uniforms.createOrUpdate(FillLayerTweaker::FillTilePropsUBOName, &tileProps, context);
+            uniforms.addOrReplace(FillLayerTweaker::FillTilePropsUBOName, sharedUBOs.tileProps);
+            uniforms.addOrReplace(FillLayerTweaker::FillInterpolateUBOName, sharedUBOs.interpolate);
             drawable.setVertexAttributes(vertexAttrs);
         };
         if (0 < tileLayerGroup->visitDrawables(renderPass, tileID, std::move(updateExisting))) {
             continue;
         }
-
-        // Share UBO buffers among any drawables created for this tile
-        const auto interpBuffer = context.createUniformBuffer(&interpolateUBO, sizeof(interpolateUBO));
-        const auto tilePropsBuffer = context.createUniformBuffer(&tileProps, sizeof(tileProps));
 
         if (unevaluated.get<FillPattern>().isUndefined()) {
             // Fill will occur in opaque or translucent pass based on `opaquePassCutoff`.
@@ -491,7 +490,7 @@ void RenderFillLayer::update(gfx::ShaderRegistry& shaders,
                                          bucket.sharedTriangles,
                                          bucket.triangleSegments.data(),
                                          bucket.triangleSegments.size());
-                finish(*fillBuilder, tileID, interpolateUBO, tileProps);
+                finish(*fillBuilder, tileID, sharedUBOs);
             }
             if (outlineBuilder) {
                 outlineBuilder->setShader(outlineShader);
@@ -499,7 +498,7 @@ void RenderFillLayer::update(gfx::ShaderRegistry& shaders,
                 outlineBuilder->setRawVertices({}, vertexCount, gfx::AttributeDataType::Short2);
                 outlineBuilder->setSegments(
                     gfx::Lines(2), bucket.sharedLines, bucket.lineSegments.data(), bucket.lineSegments.size());
-                finish(*outlineBuilder, tileID, interpolateUBO, tileProps);
+                finish(*outlineBuilder, tileID, sharedUBOs);
             }
         } else { // FillPattern is defined
             if ((renderPass & RenderPass::Translucent) == 0) {
@@ -577,7 +576,7 @@ void RenderFillLayer::update(gfx::ShaderRegistry& shaders,
                                             bucket.triangleSegments.data(),
                                             bucket.triangleSegments.size());
 
-                finish(*patternBuilder, tileID, interpolateUBO, tileProps);
+                finish(*patternBuilder, tileID, sharedUBOs);
             }
             if (outlinePatternBuilder) {
                 outlinePatternBuilder->setShader(outlineShader);
@@ -587,7 +586,7 @@ void RenderFillLayer::update(gfx::ShaderRegistry& shaders,
                 outlinePatternBuilder->setSegments(
                     gfx::Lines(2), bucket.sharedLines, bucket.lineSegments.data(), bucket.lineSegments.size());
 
-                finish(*outlinePatternBuilder, tileID, interpolateUBO, tileProps);
+                finish(*outlinePatternBuilder, tileID, sharedUBOs);
             }
         }
     }
