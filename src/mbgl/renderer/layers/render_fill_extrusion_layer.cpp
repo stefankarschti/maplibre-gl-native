@@ -75,8 +75,8 @@ void RenderFillExtrusionLayer::evaluate(const PropertyEvaluationParameters& para
     evaluatedProperties = std::move(properties);
 
 #if MLN_DRAWABLE_RENDERER
-    if (layerGroup) {
-        layerGroup->setLayerTweaker(std::make_shared<FillExtrusionLayerTweaker>(evaluatedProperties));
+    if (layerGroup && layerGroup->getLayerTweaker()) {
+        layerGroup->getLayerTweaker()->updateProperties(evaluatedProperties);
     }
 #endif // MLN_DRAWABLE_RENDERER
 }
@@ -369,6 +369,8 @@ void RenderFillExtrusionLayer::update(gfx::ShaderRegistry& shaders,
             binders.setPatternParameters(patternPosA, patternPosB, crossfade);
         }
 
+        auto& sharedUBOs = tileUBOs[tileID];
+
         const FillExtrusionInterpolateUBO interpUBO = {
             /* .base_t = */ std::get<0>(binders.get<FillExtrusionBase>()->interpolationFactor(zoom)),
             /* .height_t = */ std::get<0>(binders.get<FillExtrusionHeight>()->interpolationFactor(zoom)),
@@ -378,21 +380,23 @@ void RenderFillExtrusionLayer::update(gfx::ShaderRegistry& shaders,
             /* .pad = */ 0,
             0,
             0};
+        context.emplaceOrUpdateUniformBuffer(sharedUBOs.interpolate, &interpUBO);
 
         const FillExtrusionDrawableTilePropsUBO tilePropsUBO = {
             /* pattern_from = */ patternPosA ? util::cast<float>(patternPosA->tlbr()) : std::array<float, 4>{0},
             /* pattern_to = */ patternPosB ? util::cast<float>(patternPosB->tlbr()) : std::array<float, 4>{0},
         };
+        context.emplaceOrUpdateUniformBuffer(sharedUBOs.tileProps, &tilePropsUBO);
 
         // If we already have drawables for this tile, update them.
         if (tileLayerGroup->getDrawableCount(drawPass, tileID) > 0) {
             // Just update the drawables we already created
             tileLayerGroup->visitDrawables(drawPass, tileID, [&](gfx::Drawable& drawable) {
                 auto& uniforms = drawable.mutableUniformBuffers();
-                uniforms.createOrUpdate(
-                    FillExtrusionLayerTweaker::FillExtrusionTilePropsUBOName, &tilePropsUBO, context);
-                uniforms.createOrUpdate(
-                    FillExtrusionLayerTweaker::FillExtrusionInterpolateUBOName, &interpUBO, context);
+                uniforms.addOrReplace(
+                    FillExtrusionLayerTweaker::FillExtrusionTilePropsUBOName, sharedUBOs.tileProps);
+                uniforms.addOrReplace(
+                    FillExtrusionLayerTweaker::FillExtrusionInterpolateUBOName, sharedUBOs.interpolate);
             });
             continue;
         }
@@ -501,10 +505,10 @@ void RenderFillExtrusionLayer::update(gfx::ShaderRegistry& shaders,
                 drawable->setTileID(tileID);
 
                 auto& uniforms = drawable->mutableUniformBuffers();
-                uniforms.createOrUpdate(
-                    FillExtrusionLayerTweaker::FillExtrusionTilePropsUBOName, &tilePropsUBO, context);
-                uniforms.createOrUpdate(
-                    FillExtrusionLayerTweaker::FillExtrusionInterpolateUBOName, &interpUBO, context);
+                uniforms.addOrReplace(
+                    FillExtrusionLayerTweaker::FillExtrusionTilePropsUBOName, sharedUBOs.tileProps);
+                uniforms.addOrReplace(
+                    FillExtrusionLayerTweaker::FillExtrusionInterpolateUBOName, sharedUBOs.interpolate);
 
                 tileLayerGroup->addDrawable(drawPass, tileID, std::move(drawable));
                 ++stats.drawablesAdded;

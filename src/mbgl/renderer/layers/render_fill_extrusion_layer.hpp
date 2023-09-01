@@ -57,6 +57,12 @@ private:
 #if MLN_DRAWABLE_RENDERER
     gfx::ShaderGroupPtr fillExtrusionGroup;
     gfx::ShaderGroupPtr fillExtrusionPatternGroup;
+
+    struct TileUBOs {
+        gfx::UniformBufferPtr interpolate;
+        gfx::UniformBufferPtr tileProps;
+    };
+    std::unordered_map<OverscaledTileID, TileUBOs> tileUBOs;
 #endif // MLN_DRAWABLE_RENDERER
 
     std::unique_ptr<gfx::OffscreenTexture> renderTexture;

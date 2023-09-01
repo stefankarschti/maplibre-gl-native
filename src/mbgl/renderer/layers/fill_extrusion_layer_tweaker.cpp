@@ -95,11 +95,7 @@ void FillExtrusionLayerTweaker::execute(LayerGroupBase& layerGroup,
         /* .pad = */ 0,
         0,
         0};
-    if (!propsBuffer) {
-        propsBuffer = context.createUniformBuffer(&paramsUBO, sizeof(paramsUBO));
-    } else {
-        propsBuffer->update(&paramsUBO, sizeof(paramsUBO));
-    }
+    context.emplaceOrUpdateUniformBuffer(propsBuffer, &paramsUBO);
 
     layerGroup.visitDrawables([&](gfx::Drawable& drawable) {
         auto& uniforms = drawable.mutableUniformBuffers();
