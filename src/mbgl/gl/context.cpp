@@ -478,6 +478,16 @@ gfx::UniformBufferPtr Context::createUniformBuffer(const void* data, std::size_t
     return std::make_shared<gl::UniformBufferGL>(data, size);
 }
 
+bool Context::emplaceOrUpdateUniformBuffer(gfx::UniformBufferPtr& buffer, const void* data, std::size_t size) {
+    if (buffer) {
+        buffer->update(data, size);
+        return false;
+    } else {
+        buffer = createUniformBuffer(data, size);
+        return true;
+    }
+}
+
 gfx::ShaderProgramBasePtr Context::getGenericShader(gfx::ShaderRegistry& shaders, const std::string& name) {
     std::vector<std::string> emptyProperties(0);
     return std::static_pointer_cast<gfx::ShaderProgramBase>(

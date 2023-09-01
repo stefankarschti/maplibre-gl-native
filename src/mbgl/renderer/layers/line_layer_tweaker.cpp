@@ -124,8 +124,15 @@ void LineLayerTweaker::execute(LayerGroupBase& layerGroup,
     const auto& evaluated = static_cast<const LineLayerProperties&>(*evaluatedProperties).evaluated;
     const auto& crossfade = static_cast<const LineLayerProperties&>(*evaluatedProperties).crossfade;
 
+    // If the properties have been re-evaluated, force one update of each property-based, shared UBO
+    bool updateLineProps = propertiesUpdated;
+    bool updateGradientProps = propertiesUpdated;
+    bool updatePatternProps = propertiesUpdated;
+    bool updateSDFProps = propertiesUpdated;
+    propertiesUpdated = false;
+
     const auto getLinePropsBuffer = [&]() {
-        if (!linePropertiesBuffer) {
+        if (!linePropertiesBuffer || propertiesUpdated) {
             const LinePropertiesUBO linePropertiesUBO{
                 /*color =*/evaluated.get<LineColor>().constantOr(LineColor::defaultValue()),
                 /*blur =*/evaluated.get<LineBlur>().constantOr(LineBlur::defaultValue()),
@@ -135,12 +142,13 @@ void LineLayerTweaker::execute(LayerGroupBase& layerGroup,
                 /*width =*/evaluated.get<LineWidth>().constantOr(LineWidth::defaultValue()),
                 0,
                 {0, 0}};
-            linePropertiesBuffer = context.createUniformBuffer(&linePropertiesUBO, sizeof(linePropertiesUBO));
+            context.emplaceOrUpdateUniformBuffer(linePropertiesBuffer, &linePropertiesUBO);
+            propertiesUpdated = false;
         }
         return linePropertiesBuffer;
     };
     const auto getLineGradientPropsBuffer = [&]() {
-        if (!lineGradientPropertiesBuffer) {
+        if (!lineGradientPropertiesBuffer || updateGradientProps) {
             const LineGradientPropertiesUBO lineGradientPropertiesUBO{
                 /*blur =*/evaluated.get<LineBlur>().constantOr(LineBlur::defaultValue()),
                 /*opacity =*/evaluated.get<LineOpacity>().constantOr(LineOpacity::defaultValue()),
@@ -149,13 +157,13 @@ void LineLayerTweaker::execute(LayerGroupBase& layerGroup,
                 /*width =*/evaluated.get<LineWidth>().constantOr(LineWidth::defaultValue()),
                 0,
                 {0, 0}};
-            lineGradientPropertiesBuffer = context.createUniformBuffer(&lineGradientPropertiesUBO,
-                                                                       sizeof(lineGradientPropertiesUBO));
+            context.emplaceOrUpdateUniformBuffer(lineGradientPropertiesBuffer, &lineGradientPropertiesUBO);
+            updateGradientProps = false;
         }
         return lineGradientPropertiesBuffer;
     };
     const auto getLinePatternPropsBuffer = [&]() {
-        if (!linePatternPropertiesBuffer) {
+        if (!linePatternPropertiesBuffer || updatePatternProps) {
             const LinePatternPropertiesUBO linePatternPropertiesUBO{
                 /*blur =*/evaluated.get<LineBlur>().constantOr(LineBlur::defaultValue()),
                 /*opacity =*/evaluated.get<LineOpacity>().constantOr(LineOpacity::defaultValue()),
@@ -164,13 +172,13 @@ void LineLayerTweaker::execute(LayerGroupBase& layerGroup,
                 /*width =*/evaluated.get<LineWidth>().constantOr(LineWidth::defaultValue()),
                 0,
                 {0, 0}};
-            linePatternPropertiesBuffer = context.createUniformBuffer(&linePatternPropertiesUBO,
-                                                                      sizeof(linePatternPropertiesUBO));
+            context.emplaceOrUpdateUniformBuffer(linePatternPropertiesBuffer, &linePatternPropertiesUBO);
+            updatePatternProps = false;
         }
         return linePatternPropertiesBuffer;
     };
     const auto getLineSDFPropsBuffer = [&]() {
-        if (!lineSDFPropertiesBuffer) {
+        if (!lineSDFPropertiesBuffer || updateSDFProps) {
             const LineSDFPropertiesUBO lineSDFPropertiesUBO{
                 /*color =*/evaluated.get<LineColor>().constantOr(LineColor::defaultValue()),
                 /*blur =*/evaluated.get<LineBlur>().constantOr(LineBlur::defaultValue()),
@@ -180,7 +188,8 @@ void LineLayerTweaker::execute(LayerGroupBase& layerGroup,
                 /*width =*/evaluated.get<LineWidth>().constantOr(LineWidth::defaultValue()),
                 /*floorwidth =*/evaluated.get<LineFloorWidth>().constantOr(LineFloorWidth::defaultValue()),
                 {0, 0}};
-            lineSDFPropertiesBuffer = context.createUniformBuffer(&lineSDFPropertiesUBO, sizeof(lineSDFPropertiesUBO));
+            context.emplaceOrUpdateUniformBuffer(lineSDFPropertiesBuffer, &lineSDFPropertiesUBO);
+            updateSDFProps = false;
         }
         return lineSDFPropertiesBuffer;
     };

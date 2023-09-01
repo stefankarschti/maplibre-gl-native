@@ -120,22 +120,13 @@ void SymbolLayerTweaker::execute(LayerGroupBase& layerGroup,
 
         if (isText && (!textPaintBuffer || propertiesUpdated)) {
             const auto props = buildPaintUBO(true, evaluated);
-            if (textPaintBuffer) {
-                textPaintBuffer->update(&props, sizeof(props));
-            } else {
-                textPaintBuffer = parameters.context.createUniformBuffer(&props, sizeof(props));
-            }
-            propertiesUpdated = false;
+            context.emplaceOrUpdateUniformBuffer(textPaintBuffer, &props);
         }
         else if (!isText && (!iconPaintBuffer || propertiesUpdated)) {
             const auto props = buildPaintUBO(false, evaluated);
-            if (iconPaintBuffer) {
-                iconPaintBuffer->update(&props, sizeof(props));
-            } else {
-                iconPaintBuffer = parameters.context.createUniformBuffer(&props, sizeof(props));
-            }
-            propertiesUpdated = false;
+            context.emplaceOrUpdateUniformBuffer(iconPaintBuffer, &props);
         }
+        propertiesUpdated = false;
 
         // from RenderTile::translatedMatrix
         const auto translate = isText ? evaluated.get<style::TextTranslate>() : evaluated.get<style::IconTranslate>();
