@@ -111,14 +111,15 @@ enum class State { None, WaitingForAssets, WarmingUp, Benchmarking } state = Sta
 int frames = 0;
 double totalFrameTime = 0;
 std::chrono::steady_clock::time_point started;
-std::vector<std::pair<std::string, double> > result;
+struct result_t {
+    std::string name;
+    double frameTime;
+    double frameDuration;
+};
+std::vector<result_t> result;
 
 static const int warmupDuration = 20; // frames
 static const int benchmarkDuration = 200; // frames
-
-namespace  mbgl {
-    extern std::size_t uploadCount, uploadBuildCount, uploadVertextAttrsDirty, uploadInvalidSegments;
-}
 
 - (void)startBenchmarkIteration
 {
@@ -134,23 +135,22 @@ namespace  mbgl {
         NSLog(@"Benchmark completed.");
         NSLog(@"Result:");
         double totalFrameTime = 0;
+        double totalDuration = 0;
         size_t colWidth = 0;
         for (const auto& row : result) {
-            colWidth = std::max(row.first.size(), colWidth);
+            colWidth = std::max(row.name.size(), colWidth);
         }
         for (const auto& row : result) {
-            NSLog(@"| %-*s | %4.1f ms | %4.1f fps |", int(colWidth), row.first.c_str(), 1e3 * row.second, 1.0 / row.second);
-            totalFrameTime += row.second;
+            NSLog(@"| %-*s | %4.1f ms | %4.1f fps || %4.1f ms | %4.1f fps |", int(colWidth), row.name.c_str(), 1e3 * row.frameTime, 1.0 / row.frameTime, 1e3 * row.frameDuration, 1.0 / row.frameDuration);
+            totalFrameTime += row.frameTime;
+            totalDuration += row.frameDuration;
         }
 
-        NSLog(@"Average frame time: %4.1f ms", totalFrameTime * 1e3 / result.size());
-        NSLog(@"Average FPS: %4.1f", result.size() / totalFrameTime);
-        
-        // NSLog(@"Total uploads: %zu", mbgl::uploadCount);
-        // NSLog(@"Total uploads with dirty vattr: %zu", mbgl::uploadVertextAttrsDirty);
-        // NSLog(@"Total uploads with invalid segs: %zu", mbgl::uploadInvalidSegments);
-        // NSLog(@"Total uploads with build: %zu", mbgl::uploadBuildCount);
-
+        double avgFrameTime = totalFrameTime / result.size();
+        double avgDuration = totalDuration / result.size();
+        NSLog(@"Average frame time: %.1f ms (%.1f ms sync)", 1e3 * avgFrameTime, 1e3 * avgDuration);
+        NSLog(@"Average FPS: %.1f (%.1f sync)", 1 / avgFrameTime, 1 / avgDuration);
+                
         // this does not shut the application down correctly,
         // and results in an assertion failure in thread-local code
         //exit(0);
@@ -188,8 +188,8 @@ namespace  mbgl {
             const auto wallClockFPS = double(frames * 1e6) / duration;
             const auto frameTime = static_cast<double>(totalFrameTime) / frames;
             const auto potentialFPS = 1.0 / frameTime;
-            result.emplace_back(mbgl::bench::locations[idx].name, frameTime);
-            NSLog(@"- Frame time: %.1f ms, FPS: %.1f (%.1f sync FPS)", frameTime * 1e3, potentialFPS, wallClockFPS);
+            result.emplace_back(result_t{mbgl::bench::locations[idx].name, frameTime, static_cast<double>(duration) / (1e6 * frames)});
+            NSLog(@"- Frame time: %.1f ms, FPS: %.1f (%.1f sync)", frameTime * 1e3, potentialFPS, wallClockFPS);
 
             // Start benchmarking the next location.
             idx++;
