@@ -141,7 +141,7 @@ static const int benchmarkDuration = 200; // frames
             colWidth = std::max(row.name.size(), colWidth);
         }
         for (const auto& row : result) {
-            NSLog(@"| %-*s | %4.1f ms | %4.1f fps || %4.1f ms | %4.1f fps |", int(colWidth), row.name.c_str(), 1e3 * row.frameTime, 1.0 / row.frameTime, 1e3 * row.frameDuration, 1.0 / row.frameDuration);
+            NSLog(@"| %-*s | %4.1f ms | %5.1f fps || %4.1f ms | %4.1f fps |", int(colWidth), row.name.c_str(), 1e3 * row.frameTime, 1.0 / row.frameTime, 1e3 * row.frameDuration, 1.0 / row.frameDuration);
             totalFrameTime += row.frameTime;
             totalDuration += row.frameDuration;
         }
