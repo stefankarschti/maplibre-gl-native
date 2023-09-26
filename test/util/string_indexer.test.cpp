@@ -63,7 +63,7 @@ TEST(StringIndexer, Reallocate) {
     const auto str1 = StringIndexer::get(id1);
     EXPECT_EQ(str, str1);
 
-    for (auto i = id1; i < id1 + N; ++i) {
+    for (auto i = id1 + 1; i < id1 + N; ++i) {
         const auto strN1 = StringIndexer::get(i);
         EXPECT_EQ(strN1, string_for_i(i));
     }

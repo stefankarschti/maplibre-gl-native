@@ -16,7 +16,7 @@ StringIndexer::StringIndexer() {
     identityToString.reserve(initialCapacity);
     buffer.reserve(initialBufferCapacity);
     
-    [[maybe_unused]] auto id = insert(empty.c_str());
+    [[maybe_unused]] auto id = insert("");
     assert(0 == id);
 }
 
@@ -59,7 +59,7 @@ StringIdentity StringIndexer::get(std::string_view string) {
         std::unique_lock<std::shared_mutex> writerLock(instance().sharedMutex);
 
         auto& stringToIdentity = instance().stringToIdentity;
-        auto& identityToString = instance().identityToString;
+        [[maybe_unused]] auto& identityToString = instance().identityToString;
         assert(stringToIdentity.size() == identityToString.size());
 
         if (const auto it = stringToIdentity.find(string); it == stringToIdentity.end()) {
@@ -87,6 +87,9 @@ void StringIndexer::clear() {
     instance().stringToIdentity.clear();
     instance().identityToString.clear();
     instance().buffer.clear();
+
+    [[maybe_unused]] auto id = instance().insert("");
+    assert(0 == id);
 }
 
 size_t StringIndexer::size() {
@@ -96,7 +99,10 @@ size_t StringIndexer::size() {
     auto& identityToString = instance().identityToString;
     assert(stringToIdentity.size() == identityToString.size());
 
-    return identityToString.size();
+    const auto size_ = identityToString.size();
+    assert(size_ >= 1);
+
+    return size_ - 1;
 }
 
 } // namespace mbgl
