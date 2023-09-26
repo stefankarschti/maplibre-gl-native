@@ -11,12 +11,12 @@ TEST(StringIndexer, AddStrings) {
     EXPECT_EQ(StringIndexer::size(), 0);
 
     const auto id1 = StringIndexer::get("test string1");
-    EXPECT_EQ(id1, 0);
+    EXPECT_EQ(id1, 1);
     EXPECT_EQ(StringIndexer::size(), 1);
 
     const std::string_view s2 = "test string2";
     const auto id2 = StringIndexer::get(s2);
-    EXPECT_EQ(id2, 1);
+    EXPECT_EQ(id2, 2);
     EXPECT_EQ(StringIndexer::size(), 2);
 }
 
@@ -27,7 +27,7 @@ TEST(StringIndexer, GetString) {
     constexpr auto str = "test string1";
 
     const auto id1 = StringIndexer::get(str);
-    EXPECT_EQ(id1, 0);
+    EXPECT_EQ(id1, 1);
     EXPECT_EQ(StringIndexer::size(), 1);
 
     const auto str1 = StringIndexer::get(id1);
@@ -45,7 +45,7 @@ TEST(StringIndexer, Reallocate) {
     constexpr auto str = "reallocate test string1";
 
     const auto id1 = StringIndexer::get(str);
-    EXPECT_EQ(id1, 0);
+    EXPECT_EQ(id1, 1);
     EXPECT_EQ(StringIndexer::size(), 1);
 
     // force reallocation. assume capacity: 100 strings, 100 * 32 bytes buffer space
@@ -54,7 +54,7 @@ TEST(StringIndexer, Reallocate) {
         using namespace std::string_literals;
         return "1234567890"s + "1234567890"s + "1234567890"s + "---" + std::to_string(i);
     };
-    for (auto i = 1; i < N; ++i) {
+    for (auto i = id1 + 1; i < id1 + N; ++i) {
         StringIndexer::get(string_for_i(i));
     }
 
@@ -63,7 +63,7 @@ TEST(StringIndexer, Reallocate) {
     const auto str1 = StringIndexer::get(id1);
     EXPECT_EQ(str, str1);
 
-    for (auto i = 1; i < N; ++i) {
+    for (auto i = id1; i < id1 + N; ++i) {
         const auto strN1 = StringIndexer::get(i);
         EXPECT_EQ(strN1, string_for_i(i));
     }

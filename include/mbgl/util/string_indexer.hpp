@@ -40,6 +40,8 @@ protected:
         return inst;
     }
 
+    StringIdentity insert(std::string_view);
+
     MapType stringToIdentity;
     VectorType identityToString;
     BufferType buffer;
