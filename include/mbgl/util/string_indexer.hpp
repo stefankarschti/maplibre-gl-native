@@ -42,6 +42,8 @@ protected:
 
     StringIdentity insert(std::string_view);
 
+    void initialize();
+    
     MapType stringToIdentity;
     VectorType identityToString;
     BufferType buffer;

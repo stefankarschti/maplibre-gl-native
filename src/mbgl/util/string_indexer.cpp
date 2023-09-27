@@ -15,7 +15,11 @@ StringIndexer::StringIndexer() {
     stringToIdentity.reserve(initialCapacity);
     identityToString.reserve(initialCapacity);
     buffer.reserve(initialBufferCapacity);
-    
+
+    initialize();
+}
+
+void StringIndexer::initialize() {
     [[maybe_unused]] auto id = insert("");
     assert(0 == id);
 }
@@ -88,8 +92,7 @@ void StringIndexer::clear() {
     instance().identityToString.clear();
     instance().buffer.clear();
 
-    [[maybe_unused]] auto id = instance().insert("");
-    assert(0 == id);
+    instance().initialize();
 }
 
 size_t StringIndexer::size() {
