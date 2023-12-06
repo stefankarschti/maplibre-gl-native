@@ -3,6 +3,8 @@
 #include <mbgl/gfx/uniform_buffer.hpp>
 #include <mbgl/gl/types.hpp>
 
+#include <memory>
+
 namespace mbgl {
 namespace gl {
 
@@ -20,9 +22,11 @@ public:
 
     UniformBufferGL clone() const { return {*this}; }
 
+    const uint8_t* getCurrent() override { return current.get(); };
 protected:
     BufferID id = 0;
     uint32_t hash;
+    std::unique_ptr<uint8_t[]> current;
 };
 
 /// Stores a collection of uniform buffers by name

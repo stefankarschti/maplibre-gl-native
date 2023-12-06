@@ -36,6 +36,8 @@ public:
 
     UniformBuffer& operator=(const UniformBuffer&) = delete;
 
+    virtual const uint8_t* getCurrent() { return nullptr; };
+    
 protected:
     UniformBuffer& operator=(UniformBuffer&& other) {
         size = other.size;
