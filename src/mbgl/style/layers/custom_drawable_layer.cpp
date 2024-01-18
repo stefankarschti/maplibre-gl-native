@@ -288,7 +288,8 @@ void CustomDrawableLayerHost::Interface::setSymbolOptions(const SymbolOptions& o
 }
 
 void CustomDrawableLayerHost::Interface::addPolyline(const GeometryCoordinates& coordinates) {
-    if (!lineShader) lineShader = lineShaderDefault();
+    // TODO: optimize
+    lineShader = lineShaderDefault();
     assert(lineShader);
     if (!builder || builder->getShader() != lineShader) {
         finish();
@@ -297,6 +298,15 @@ void CustomDrawableLayerHost::Interface::addPolyline(const GeometryCoordinates& 
     assert(builder);
     assert(builder->getShader() == lineShader);
     builder->addPolyline(coordinates, lineOptions.geometry);
+}
+
+void CustomDrawableLayerHost::Interface::addPolyline([[maybe_unused]] const LineString<double>& coordinates) {
+    // add polyline by geographical coordinates
+    // TODO: optimize
+    lineShader = lineShaderGlobal();
+    assert(lineShader);
+    
+    
 }
 
 void CustomDrawableLayerHost::Interface::addFill(const GeometryCollection& geometry) {
@@ -488,6 +498,10 @@ gfx::ShaderPtr CustomDrawableLayerHost::Interface::lineShaderDefault() const {
     };
 
     return shaderGroup->getOrCreateShader(context, propertiesAsUniforms);
+}
+
+gfx::ShaderPtr CustomDrawableLayerHost::Interface::lineShaderGlobal() const {
+    return context.getGenericShader(shaders, "GlobalLineShader");
 }
 
 gfx::ShaderPtr CustomDrawableLayerHost::Interface::fillShaderDefault() const {

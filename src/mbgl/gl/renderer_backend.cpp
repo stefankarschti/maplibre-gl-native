@@ -102,6 +102,7 @@ void RendererBackend::initShaders(gfx::ShaderRegistry& shaders, const ProgramPar
                   shaders::BuiltIn::DebugShader,
                   shaders::BuiltIn::FillShader,
                   shaders::BuiltIn::FillOutlineShader,
+                  shaders::BuiltIn::GlobalLineShader,
                   shaders::BuiltIn::LineBasicShader,
                   shaders::BuiltIn::LineShader,
                   shaders::BuiltIn::LineSDFShader,

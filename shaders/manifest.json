@@ -181,6 +181,12 @@
         "glsl_frag": "drawable.custom.symbol_icon.fragment.glsl",
         "uses_ubos": true
     },
+    {
+        "name": "GlobalLineShader",
+        "header": "drawable_global_line",
+        "glsl_vert": "drawable.global.line.vertex.glsl",
+        "glsl_frag": "drawable.global.line.fragment.glsl"
+    },
 
     {
         "name": "Prelude",

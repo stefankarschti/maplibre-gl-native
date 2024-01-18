@@ -148,6 +148,37 @@ public:
             // add symbol
             interface.addSymbol(position);
         }
+        
+        // polyline by geographic coordinates
+        {
+            using namespace mbgl;
+            
+            Interface::LineOptions options {
+                /*color=*/Color::red(),
+                /*blur=*/0.0f,
+                /*opacity=*/1.0f,
+                /*gapWidth=*/0.0f,
+                /*offset=*/0.0f,
+                /*width=*/4.0f,
+                {}
+            };
+            options.geometry.beginCap   = style::LineCapType::Round;
+            options.geometry.endCap     = style::LineCapType::Round;
+            options.geometry.joinType   = style::LineJoinType::Round;
+            
+            LineString<double> polyline {
+                {-122.6813560305925, 37.666084247570964},
+                {-122.26765538866474, 37.65037232584494},
+                {-122.42528413673159, 38.020443518012584}
+            };
+            
+            // set property values
+            interface.setLineOptions(options);
+            
+            // add polyline
+            interface.setCoordinateSystem(Interface::CoordinateSystem::Geographic);
+            interface.addPolyline(polyline);
+        }
                 
         // finish
         interface.finish();

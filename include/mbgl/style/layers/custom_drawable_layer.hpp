@@ -42,12 +42,12 @@ public:
         float width = 1.f;
         gfx::PolylineGeneratorOptions geometry;
     };
-
+    
     struct FillOptions {
         Color color;
         float opacity = 1.f;
     };
-
+    
     struct SymbolOptions {
         Size size;
         gfx::Texture2DPtr texture;
@@ -57,7 +57,12 @@ public:
         bool scaleWithMap{false};
         bool pitchWithMap{false};
     };
-
+    
+    enum class CoordinateSystem {
+        Tile,
+        Geographic
+    };
+    
 public:
     /// @brief Construct a new Interface object (internal core use only)
     Interface(RenderLayer& layer,
@@ -74,35 +79,35 @@ public:
      * @return std::size_t
      */
     std::size_t getDrawableCount() const;
-
+    
     /**
      * @brief Set the Tile ID
      *
      * @param tileID
      */
     void setTileID(OverscaledTileID tileID);
-
+    
     /**
      * @brief Set the line options
      *
      * @param options
      */
     void setLineOptions(const LineOptions& options);
-
+    
     /**
      * @brief Set the fill options
      *
      * @param options
      */
     void setFillOptions(const FillOptions& options);
-
+    
     /**
      * @brief Set the Symbol options
      *
      * @param options
      */
     void setSymbolOptions(const SymbolOptions& options);
-
+    
     /**
      * @brief Add a polyline
      *
@@ -110,6 +115,7 @@ public:
      * @param options Polyline options
      */
     void addPolyline(const GeometryCoordinates& coordinates);
+    void addPolyline(const LineString<double>& coordinates);
 
     /**
      * @brief Add a multipolygon area fill
@@ -117,20 +123,24 @@ public:
      * @param geometry a collection of rings with optional holes
      */
     void addFill(const GeometryCollection& geometry);
-
+    
     /**
      * @brief Add a symbol
      *
      * @param point
      */
     void addSymbol(const GeometryCoordinate& point);
-
+    
     /**
      * @brief Finish the current drawable building session
      *
      */
     void finish();
-
+    
+    void setCoordinateSystem(CoordinateSystem coordSys) { coordinateSystem = coordSys; };
+    
+    CoordinateSystem getCoordinateSystem() const { return coordinateSystem; }
+    
 public:
     RenderLayer& layer;
     LayerGroupBasePtr& layerGroup;
@@ -140,24 +150,27 @@ public:
     const std::shared_ptr<UpdateParameters>& updateParameters;
     const RenderTree& renderTree;
     UniqueChangeRequestVec& changes;
-
+    
 private:
     gfx::ShaderPtr lineShaderDefault() const;
+    gfx::ShaderPtr lineShaderGlobal() const;
     gfx::ShaderPtr fillShaderDefault() const;
     gfx::ShaderPtr symbolShaderDefault() const;
-
+    
     std::unique_ptr<gfx::DrawableBuilder> createBuilder(const std::string& name, gfx::ShaderPtr shader) const;
-
+    
     std::unique_ptr<gfx::DrawableBuilder> builder;
     std::optional<OverscaledTileID> tileID;
-
+    
     gfx::ShaderPtr lineShader;
     gfx::ShaderPtr fillShader;
     gfx::ShaderPtr symbolShader;
-
+    
     LineOptions lineOptions;
     FillOptions fillOptions;
     SymbolOptions symbolOptions;
+    
+    CoordinateSystem coordinateSystem {CoordinateSystem::Tile};
 };
 
 class CustomDrawableLayer final : public Layer {
