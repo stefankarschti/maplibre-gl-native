@@ -293,7 +293,7 @@ void CustomDrawableLayerHost::Interface::addPolyline(const GeometryCoordinates& 
     assert(lineShader);
     if (!builder || builder->getShader() != lineShader) {
         finish();
-        builder = createBuilder("lines", lineShader);
+        builder = createBuilder("tile-lines", lineShader);
     }
     assert(builder);
     assert(builder->getShader() == lineShader);
@@ -305,7 +305,12 @@ void CustomDrawableLayerHost::Interface::addPolyline([[maybe_unused]] const Line
     // TODO: optimize
     lineShader = lineShaderGlobal();
     assert(lineShader);
-    
+    if (!builder || builder->getShader() != lineShader) {
+        finish();
+        builder = createBuilder("global-lines", lineShader);
+    }
+    assert(builder);
+    assert(builder->getShader() == lineShader);
     
 }
 
