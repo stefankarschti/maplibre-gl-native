@@ -1,6 +1,6 @@
 # MapLibre Native for iOS
 
-[![GitHub Action build status](https://github.com/maplibre/maplibre-native/workflows/ios-ci/badge.svg)](https://github.com/maplibre/maplibre-native/actions/workflows/ios-ci.yml) [![GitHub Action build status](https://github.com/maplibre/maplibre-native/workflows/ios-release/badge.svg)](https://github.com/maplibre/maplibre-native/actions/workflows/ios-release.yml)
+[![GitHub Action build status](https://github.com/maplibre/maplibre-native/actions/workflows/ios-ci.yml/badge.svg)](https://github.com/maplibre/maplibre-native/actions/workflows/ios-ci.yml) [![CocoaPods Package](https://img.shields.io/cocoapods/v/MapLibre.svg)](https://github.com/CocoaPods/Specs/tree/master/Specs/b/0/0/MapLibre) [![](https://img.shields.io/endpoint?url=https%3A%2F%2Fswiftpackageindex.com%2Fapi%2Fpackages%2Fmaplibre%2Fmaplibre-gl-native-distribution%2Fbadge%3Ftype%3Dplatforms)](https://swiftpackageindex.com/maplibre/maplibre-gl-native-distribution)
 
 A library based on [MapLibre Native](https://github.com/maplibre/maplibre-native) for embedding interactive map views with scalable, customizable vector maps into iOS Applications.
 
@@ -77,7 +77,9 @@ cd maplibre-native
 
 ### Bazel
 
-[Bazel](https://bazel.build/) together with [rules_xcodeproj](https://github.com/MobileNativeFoundation/rules_xcodeproj) is the preferred build system. Please [share your experiences](https://github.com/maplibre/maplibre-native/discussions/1145).
+[Bazel](https://bazel.build/) can be used to build the project.
+
+You can generate an Xcode project thanks to [rules_xcodeproj](https://github.com/MobileNativeFoundation/rules_xcodeproj) intergration. 
 
 You need to install bazelisk, which is a wrapper around Bazel which ensures that the version specified in `.bazelversion` is used.
 
@@ -87,25 +89,22 @@ brew install bazelisk
 
 #### Creating `config.bzl`
 
-You need to configure Bazel. Copy the example config from `platform/ios`.
+You may want to configure Bazel, otherwise the default config gets used.
 
 ```
-cp bazel/example_config.bzl bazel/config.bzl
+cp platform/darwin/bazel/example_config.bzl platform/darwin/bazel/config.bzl
 ```
 
 You need to set your `BUNDLE_ID_PREFIX` to be unique (ideally use a domain that you own in reverse domain name notation).
 
 You can keep leave the `APPLE_MOBILE_PROVISIONING_PROFILE_NAME` alone.
 
-Set the Team ID to the Team ID of your Apple Developer Account (paid or unpaid both work). If you do not know your Team ID, enter the following command in the terminal:
+Set the Team ID to the Team ID of your Apple Developer Account (paid or unpaid both work).
+If you do not know your Team ID, go to your [Apple Developer account](https://developer.apple.com/account), log in, and scroll down to find your Team ID.
 
-```
-cd ~/Library/MobileDevice/Provisioning\ Profiles && open .
-```
+If you don't already have a developer account, continue this guide and let Xcode generate a provisioning profile for you. You will need to update the Team ID later once a certificate is generated.
 
-Then select one of the profiles and click spacebar. Your Team ID is the string between parentheses in the value of "Team".
-
-If there are no provisioning profiles available, continue this guide and let Xcode generate a provisioning profile for you. You will need to update the Team ID after this happened.
+If you are encountering build errors due to provisioning profiles, skip down to the troubleshooting section.
 
 #### Create the Xcode Project
 
@@ -113,7 +112,7 @@ _These instructions are for XCode 14.3.1_
 
 
 ```
-bazel run //platform/ios:xcodeproj
+bazel run //platform/ios:xcodeproj --@rules_xcodeproj//xcodeproj:extra_common_flags="--//:renderer=metal"
 xed platform/ios/MapLibre.xcodeproj
 ```
 
@@ -124,7 +123,10 @@ Confirm that no errors are shown:
 
 Try to run the example App in the simulator and on a device to confirm your setup works.
 
-If no provisioning profile was found, you could try changing the `BUILD_MODE` in `config.bzl` to `"xcode"`. Try the steps in this section again afterwards.
+#### Troubleshooting Provisioning Profiles
+
+If you get a Python `KeyError` when processing provisioning profiles, you probably have some _really_ old or corrupted profiles.
+Have a look through `~/Library/MobileDevice/Provisioning\ Profiles` and remove any expired profiles.
 
 #### Using Bazel from the Command Line
 
@@ -133,6 +135,21 @@ It is also possible to build and run the test application in a simulator from th
 ```
 bazel run //platform/ios:App
 ```
+
+If you want to build your own XCFramework, see the 'Build XCFramework' step in the [iOS CI workflow](../../.github/workflows/ios-ci.yml).
+
+### Render Tests
+
+To run the render tests, run the `RenderTest` target from iOS.
+
+When running in a simulator, use
+
+```
+# check for 'DataContainer' of the app with `*.maplibre.RenderTestApp` id
+xcrun simctl listapps booted
+```
+
+to get the data directory of the render test app. This allows you to inspect test results. When adding new tests, the generated expectations and `actual.png` file can be copied into the source directory from here.
 
 ## Documentation
 

@@ -1,10 +1,15 @@
 apply plugin: 'com.android.application'
 
 android {
-    compileSdkVersion 33
+    sourceSets {
+        test {
+            assets.srcDirs += ['../../../metrics']
+        }
+    }
 
     defaultConfig {
-        applicationId = 'com.mapbox.mapboxsdk.maps.render_test_runner'
+        applicationId = 'org.maplibre.render_test_runner'
+        compileSdk 34
         minSdkVersion 21
         targetSdkVersion 33
         def abi = 'all'
@@ -22,6 +27,7 @@ android {
             cmake {
                 arguments '-DANDROID_CCACHE=ccache'
                 arguments '-DANDROID_STL=c++_static'
+                arguments "-DMLN_LEGACY_RENDERER=OFF", "-DMLN_DRAWABLE_RENDERER=ON"
                 targets 'mbgl-render-test-runner'
             }
         }
